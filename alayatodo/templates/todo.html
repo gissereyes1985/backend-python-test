@@ -9,13 +9,15 @@
             <td>{{ todo.id }}</td>
             <td>{{ todo.user_id }}</td>
             <td>{{ todo.description }}</td>
+             <td>{{ todo.completed }}</td>
             <td>
                 <form method="post" action="{{ url_for('todo_delete', id=todo.id) }}">
                     <button type="submit" class="btn btn-xs btn-danger"><span class="glyphicon glyphicon-remove glyphicon-white"></span></button>
                 </form>
             </td>
-        </tr>
+        </tr>   
     </table>
+    <b>{{objJSON }}</b>
 </div>
 
 {% endblock %}

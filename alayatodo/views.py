@@ -4,9 +4,10 @@ from flask import (
     redirect,
     render_template,
     request,
-    session
+    session,
+    flash
     )
-
+import json
 
 @app.route('/')
 def home():
@@ -47,17 +48,26 @@ def logout():
 def todo(id):
     cur = g.db.execute("SELECT * FROM todos WHERE id ='%s'" % id)
     todo = cur.fetchone()
-    return render_template('todo.html', todo=todo)
+    cols = [x[0] for x in cur.description]
+   
+    aa={}
+    for prop, val in zip(cols, todo):
+        aa[prop] = val
+
+    objJSON = json.dumps(aa)
+    
+    return render_template('todo.html', todo=todo, objJSON=objJSON)
 
 
 @app.route('/todo', methods=['GET'])
 @app.route('/todo/', methods=['GET'])
-def todos():
+def todos(message = ''):
     if not session.get('logged_in'):
         return redirect('/login')
     cur = g.db.execute("SELECT * FROM todos")
     todos = cur.fetchall()
-    return render_template('todos.html', todos=todos)
+
+    return render_template('todos.html', todos=todos, message=message)
 
 
 @app.route('/todo', methods=['POST'])
@@ -65,13 +75,19 @@ def todos():
 def todos_POST():
     if not session.get('logged_in'):
         return redirect('/login')
+    elif not request.form.get('description', ''):
+        #print "inserte descripcion"
+        flash("Please enter description.")
+        return redirect('/todo')
+    
     g.db.execute(
-        "INSERT INTO todos (user_id, description) VALUES ('%s', '%s')"
-        % (session['user']['id'], request.form.get('description', ''))
+    "INSERT INTO todos (user_id, description, completed) VALUES ('%s', '%s', '%s')"
+    % (session['user']['id'], request.form.get('description', ''), request.form.get('comp', 'No'))
     )
     g.db.commit()
-    return redirect('/todo')
-
+    
+    #return redirect('/todo')
+    return todos("The record has been added")
 
 @app.route('/todo/<id>', methods=['POST'])
 def todo_delete(id):
@@ -79,4 +95,5 @@ def todo_delete(id):
         return redirect('/login')
     g.db.execute("DELETE FROM todos WHERE id ='%s'" % id)
     g.db.commit()
-    return redirect('/todo')
+   # return redirect('/todo')
+    return todos("The record has been deleted")
